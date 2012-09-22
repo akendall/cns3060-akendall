@@ -1,4 +1,4 @@
-cCS3060
+CS3060
 ======
 
 Andrew Kendall
