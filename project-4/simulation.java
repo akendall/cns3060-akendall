@@ -1,0 +1,123 @@
+import java.io.*;
+import java.util.*;
+
+
+public class simulation {
+	static int start = 15;
+	static int initial_start = 15;
+	public simulation(){}
+	public static void main(String[] args){
+		System.out.println("Enter numbers to represent requests for disk reads:");
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		int input =0;
+		String[] userInput = new String[50];
+		
+		int[] s = null;
+		
+		int count = 0;
+		
+		try {
+			while(input >=0){
+				userInput[count] = br.readLine();
+				input = Integer.parseInt(userInput[count]);
+				count++;
+			}
+			
+		}catch (IOException ioe ){
+			System.out.println("IO error trying to read the input");
+			System.exit(1);
+		}
+		s = new int[count];
+		for (int i =0; i<count; i++){
+			if(Integer.parseInt(userInput[i])>0)
+				s[i] = Integer.parseInt(userInput[i]);
+		}
+		simulation.fifo(s);
+		simulation.sstf(s);
+		simulation.scan(s);
+
+	}
+	public static void fifo(int[] s ){
+		int sum = 0;
+		System.out.println("First come first serve");
+		System.out.println("Head Movement\t\t\tTracks Traversed");
+		for(int i =0; i<s.length-1;i++){
+			if(start>s[i]){
+				System.out.println("Tracks "+ start + " - "+ s[i] + "\t\t\t\t" + Math.abs(start-s[i]));
+				sum += Math.abs(start-s[i]);
+			}
+			if(start<s[i]){
+				System.out.println("Tracks "+ start + " - "+ s[i] + "\t\t\t\t" + Math.abs(s[i]-start));
+				sum += Math.abs(s[i]-start);
+			}
+			start = s[i];
+		}
+		System.out.println("\nTotal Tracks Traversed\t\t\t"+sum+"\n");
+	}
+	
+	public static void sstf (int[] s){
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		ArrayList<Integer> order = new ArrayList<Integer>();
+		int movement = 0;
+		start = initial_start;
+		for (int i =0; i<s.length-1; i++)
+			list.add(s[i]);
+		int number = list.size();
+		System.out.println("Shortest seek time first");
+		System.out.println("Head Movement\t\t\tTracks Traversed");
+		for (int i =0;i<number; i++){
+			Iterator<Integer> it = list.iterator();
+			//find the shortest distance
+			int temp = 0;
+			int min = 0;
+			int shortest = 200;
+			while(it.hasNext()){
+				temp = (Integer)it.next();
+				int distance = Math.abs(start-temp);
+			
+				if (distance<shortest){
+					min = temp;
+					shortest = distance;
+				}
+			}
+			list.remove((Integer)min);
+			
+			System.out.println("Tracks "+ start + " - "+ min + "\t\t\t\t" + shortest);
+			movement+=shortest;
+			start = min;
+			order.add(min);
+		}
+		System.out.println("\nTotal Tracks Traversed\t\t\t"+movement+"\n");	
+	}
+	
+	static void scan(int []s){
+		start = initial_start;
+		int sum =0;
+		int count=0;
+		Arrays.sort(s);
+		System.out.println("scan-look");
+		System.out.println("Head Movement\t\t\tTracks Traversed");
+		for(int i =1;i<s.length;i++){
+			if(s[i]>start){
+				System.out.println("Tracks "+ start + " - "+ s[i] + "\t\t\t\t" + Math.abs(start-s[i]));
+				sum += Math.abs(start-s[i]);
+				start=s[i];
+				count++;
+			}
+		}
+		int size = s.length-count;
+		int[] t = new int[size];
+		if(size!=0){
+			for(int i=size; i > 1; i--)
+				t[i-1] = s[i-1];
+			for(int j=size-1; j>=1; j--){
+				System.out.println("Tracks "+ start + " - "+ t[j] + "\t\t\t\t" + (Math.abs(start-t[j])));
+				sum += Math.abs(start-t[j]);
+				start=t[j];
+			}
+		}
+		System.out.println("\nTotal Tracks Traversed\t\t\t"+sum+"\n");
+	}
+}
+
