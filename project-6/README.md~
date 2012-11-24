@@ -1,0 +1,10 @@
+cns3060-akendall
+================
+
+Observations for parta:  first off I really didn't expect it to increament count so I wasn't suprised that the program ran quickly and printed out count = 0. 
+
+Observations for partb:  I was a little suprised by how long it took to run and that it only printed count = 10.  I really didn't expect to see 10 after it took so long to run. I understood that the sleep let it go to the next thread and therefore the count never really go to where it was supposed to be.  Other than that I was a little worried that my code was wrong until I ran the partc.
+
+Observations for partc: I was a little suprised to see that it really didn't take any time to run, but not too suprised because we took the sleep(1) out.  I was pleased to see that coun't was equal to 40 as it should have been. Because there wasn't a sleep there to interrupt the thread allowing it to finish.  But it did show to me that the threads weren't working as they should.
+
+Observations for partd: The time for it to run is significantly increased, and at first I thought I had the code wrong, but then when it printed out 40 I knew that it was right. The mutex part actually locked the thread allowing it to finish its job. I did have a little trouble knowing where to put the mutex, but only for a minute.

@@ -1,0 +1,13 @@
+all: parta partb partc partd
+
+parta: parta.c
+	$(CC) parta.c -lpthread -o parta
+partb: partb.c
+	$(CC) partb.c -lpthread -o partb
+partc: partc.c
+	$(CC) partc.c -lpthread -o partc
+partd: partd.c
+	$(CC) partd.c -lpthread -o partd
+
+clean:
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
