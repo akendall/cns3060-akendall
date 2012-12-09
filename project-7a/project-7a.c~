@@ -1,0 +1,149 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+#define true 1
+#define false 0
+
+
+pid_t pid_child2=0, pid_child1=0, pid_parent=0;
+sigset_t pMask, pOldMask, cMask, cOldMask;
+int child1_ready=0, child2_ready=0;
+
+/* signal handler for parent */
+void sig_parent(int sig)
+{
+  	if ((sig==SIGUSR2) && (child1_ready==0)) {
+      		child1_ready=1;
+      		printf("***Parent SIGUSR1 handler-Recieved a 'task started' signal from the child***\n");
+      		kill(pid_child1, SIGUSR1); 	// send SIGUSR1 to child1
+  	} else
+	if (sig==SIGUSR2) {
+	      printf("****Parent SIGUSR2 handler-Recieved a 'task completed' signal from the child****\n");
+	      printf("*** Parent done ***\n");
+	      exit(0);
+	  }
+	  return;
+}
+
+/* signal handler for child1 */
+void sig_child1(int sig)
+{
+  	if (sig==SIGUSR1) {
+  	    printf("****Child SIGUSR1 handler-Recieved a 'task start' signal from the parent process****\n");
+  	    kill(pid_child2, SIGUSR1); // send SIGUSR1 to child2
+  	} else
+  	if ((sig==SIGUSR2) && (child2_ready==0)) {
+  	    child2_ready=1;
+  	    kill(pid_parent, SIGUSR2); 	// inform parent
+  	} else
+  	if (sig==SIGUSR2) {
+  	    printf("****Child SIGUSR2 handler-Recieved a 'task complete verification' signal from parent\n");
+  	    kill(pid_parent, SIGUSR2);	// inform parent
+  	    exit(0);
+  	}
+  
+  	return;
+}
+
+void sig_child2(int sig)
+{
+  	if (sig==SIGUSR1) {
+  	    kill(pid_child1, SIGUSR2);	// inform child1
+  	    exit(0);
+  	} else
+  	if (sig==SIGUSR2) {
+  	    kill(pid_child1, SIGUSR2); 	// inform child1
+  	}  
+  	return;
+}
+
+/* child2 code */
+void child2(void)
+{
+  	pid_child1=getppid(); 		
+  	if (signal(SIGUSR1, sig_child2)==SIG_ERR) {
+   	    fprintf(stderr, "Can't catch SIGUSR1.");
+  	}
+  	if (signal(SIGUSR2, sig_child2)==SIG_ERR) {
+  	   fprintf(stderr, "Can't catch SIGUSR2.");
+  	}
+  	sig_child2(SIGUSR2); 		
+  	for (;;) sigsuspend(&cOldMask);
+}
+
+
+void child1(void)
+{
+  	pid_parent=getppid();
+  	pid_t pid=fork(); 
+
+  	if (pid==0) {
+    		child2();
+  	} else {
+    		if (pid>0) {
+      			pid_child2=pid;
+      			if (signal(SIGUSR1, sig_child1)==SIG_ERR) { 
+        			fprintf(stderr, "Can't catch SIGUSR1.");
+      			}
+     	 		if (signal(SIGUSR2, sig_child1)==SIG_ERR) {
+     		   		fprintf(stderr, "Can't catch SIGUSR2.");
+     	 		}
+     	 		for (;;) {	
+				printf("Child1: running waiting for signal\n");
+				sleep(3);
+     		   		sigsuspend(&pOldMask);   		
+     		   		sigsuspend(&cOldMask);
+      			}
+    		} else {
+      			fprintf(stderr, "Can't create new child.");
+    		}
+  	}
+
+  	sigprocmask(SIG_UNBLOCK, &cMask, NULL); 
+  	return;
+}
+
+void parent(void)
+{
+  	sigemptyset(&pMask);
+  	sigaddset(&pMask, SIGUSR1);
+  	sigaddset(&pMask, SIGUSR2);
+  	sigprocmask(SIG_BLOCK, &pMask, &pOldMask); 
+	if (signal(SIGUSR2, sig_parent)==SIG_ERR) {
+  	      fprintf(stderr, "Can't catch SIGUSR2.");
+      	}
+  	pid_t pid=fork(); 
+	
+  	if (pid==0) {     			// we are in child process
+    		child1();
+  	} else {
+		printf("Parent: creating child process\n");
+		sleep(3);
+		printf("Parent: Awake statring work\n");
+    		if (pid>0) {   			// we are in parent process
+     		 	pid_child1=pid;
+      
+      			for (;;) sigsuspend(&pOldMask);   		// wait for signal
+    		} else {  
+      			fprintf(stderr, "Can't create new child.");
+    		}
+  	}
+  	sigprocmask(SIG_UNBLOCK, &pMask, NULL);
+  	return;
+}
+
+int main()
+{
+  setbuf(stdout,NULL);
+
+  parent();
+    
+  return 0;
+}
